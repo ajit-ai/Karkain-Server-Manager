@@ -1,3 +1,5 @@
+import service_scan
+
 // Karkain Server Manager - first functional slice.
 // Server inventory and service records with persistence.
 // INVENTORY ONLY: INSPECT reads stored records, no real remote action.
@@ -136,4 +138,5 @@ func main() {
     persist("data/state.dat", state)
     persist("data/report.dat", split(report, "\n"))
     print("SERVER_MANAGER_OK servers=" + str(count_type(state, "SERVER")) + " services=" + str(count_type(state, "SERVICE")))
+    service_scan.scan_local_services()
 }

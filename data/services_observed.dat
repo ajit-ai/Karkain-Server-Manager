@@ -1,0 +1,6 @@
+SERVICE|local|AarSvc_6deb1|Stopped
+SERVICE|local|AdobeARMservice|Stopped
+SERVICE|local|ADPSvc|Stopped
+SERVICE|local|AESMService|Running
+SERVICE|local|ALG|Stopped
+SERVICE|local|AppIDSvc|Stopped

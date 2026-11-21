@@ -1,0 +1,35 @@
+// Round 2 ops tests: real Get-Service CSV parsing (self-contained).
+
+func test_csv_service_line_parse() {
+    let line = "\"AESMService\",\"Running\""
+    let f = split(line, ",")
+    let name = substr(f[0], 1, len(f[0]) - 2)
+    let status = substr(f[1], 1, len(f[1]) - 2)
+    assert_eq(name, "AESMService")
+    assert_eq(status, "Running")
+}
+
+func test_service_record_build() {
+    let target = "local"
+    let name = "AarSvc_6deb1"
+    let status = "Stopped"
+    let rec = "SERVICE|" + target + "|" + name + "|" + status
+    let f = split(rec, "|")
+    assert_eq(f[0], "SERVICE")
+    assert_eq(f[1], "local")
+    assert_eq(f[2], "AarSvc_6deb1")
+    assert_eq(f[3], "Stopped")
+}
+
+func test_running_status_count() {
+    let records = ["SERVICE|local|AESMService|Running", "SERVICE|local|ALG|Stopped", "SERVICE|local|Appinfo|Running"]
+    let running = 0
+    let i = 0
+    while (i < len(records)) {
+        let f = split(records[i], "|")
+        if (f[3] == "Running") { running = running + 1 }
+        i = i + 1
+    }
+    assert_eq(len(records), 3)
+    assert_eq(running, 2)
+}

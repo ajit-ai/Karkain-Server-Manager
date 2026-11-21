@@ -1,0 +1,79 @@
+// Karkain Server Manager - Round 2 real local service inspection.
+// Runs PowerShell Get-Service through system() (pipes escaped for cmd.exe),
+// reads the redirected CSV, and records actual service names and statuses
+// in data/services_observed.dat. Round 1 inventory is untouched.
+
+func scan_unquote(s) {
+    if (len(s) >= 2) {
+        if (substr(s, 0, 1) == "\"") {
+            return substr(s, 1, len(s) - 2)
+        }
+    }
+    return s
+}
+
+func scan_persist(path, lines) {
+    let out = ""
+    let i = 0
+    while (i < len(lines)) {
+        out = out + lines[i] + "\n"
+        i = i + 1
+    }
+    writeFile(path, out)
+}
+
+public func scan_local_services() {
+    let cfg = split(readFile("data/service_scan.dat"), "\n")
+    let target = "local"
+    let limit = 6
+    let i = 0
+    while (i < len(cfg)) {
+        let c = trim(cfg[i])
+        if (c != "") {
+            let kv = split(c, "|")
+            if (kv[0] == "TARGET") { target = kv[1] }
+            if (kv[0] == "LIMIT") { limit = int(kv[1]) }
+        }
+        i = i + 1
+    }
+
+    let outpath = "C:/Windows/Temp/karkain-op/services.txt"
+    let cmd = "powershell -c Get-Service ^| Select-Object -First " + str(limit) + " Name,Status ^| ConvertTo-Csv -NoTypeInformation > " + outpath
+    let code = system(cmd)
+    print("SERVICE_SCAN_SYSTEM code=" + str(code))
+    if (code != 0) {
+        print("SERVICE_SCAN_FAIL error=powershell Get-Service failed")
+        return
+    }
+
+    let txt = readFile(outpath)
+    if (len(txt) == 0) {
+        print("SERVICE_SCAN_FAIL error=empty service output")
+        return
+    }
+
+    let lines = split(txt, "\n")
+    let records = []
+    let found = 0
+    let j = 0
+    while (j < len(lines)) {
+        let line = trim(lines[j])
+        if (line != "") {
+            let f = split(line, ",")
+            if (len(f) >= 2) {
+                let name = scan_unquote(f[0])
+                let status = scan_unquote(f[1])
+                if (name != "Name") {
+                    let rec = "SERVICE|" + target + "|" + name + "|" + status
+                    push(records, rec)
+                    print("OBSERVED_SERVICE " + name + " status=" + status)
+                    found = found + 1
+                }
+            }
+        }
+        j = j + 1
+    }
+
+    scan_persist("data/services_observed.dat", records)
+    print("SERVICE_SCAN_OK count=" + str(found) + " source=Get-Service target=" + target)
+}
