@@ -1,0 +1,35 @@
+# Karkain build artifacts
+*.exe
+*.dll
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+*.ilk
+*.exp
+main.c
+*.kark.out
+karkain.lock
+
+# Local toolchain / cache
+.karkain/
+.karkain-dev/
+__pycache__/
+*.pyc
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local data / secrets (never commit)
+*.local
+*.env
+.env
+secrets/
+data/generated/
+*.log
