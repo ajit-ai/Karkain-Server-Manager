@@ -1,0 +1,8 @@
+SERVER web-01 10.1.0.1 web
+SERVER db-01 10.1.0.2 database
+SERVICE web-01 nginx running
+SERVICE web-01 sshd running
+SERVICE db-01 postgres running
+SERVICE db-01 backup stopped
+INSPECT web-01
+LIST

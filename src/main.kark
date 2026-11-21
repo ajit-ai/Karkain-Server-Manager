@@ -1,0 +1,139 @@
+// Karkain Server Manager - first functional slice.
+// Server inventory and service records with persistence.
+// INVENTORY ONLY: INSPECT reads stored records, no real remote action.
+
+func rec_key(rec) {
+    if (rec == "") { return "" }
+    let f = split(rec, "|")
+    let k = f[0] + "|" + f[1]
+    if (f[0] == "SERVICE") {
+        k = k + "|" + f[2]
+    }
+    return k
+}
+
+func put_record(state, rec) {
+    if (rec == "") { return state }
+    let key = rec_key(rec)
+    let out = []
+    let replaced = 0
+    let i = 0
+    while (i < len(state)) {
+        let cur = state[i]
+        if (cur == "") {
+            push(out, cur)
+        } else {
+            if (rec_key(cur) == key) {
+                push(out, rec)
+                replaced = 1
+            } else {
+                push(out, cur)
+            }
+        }
+        i = i + 1
+    }
+    if (replaced == 0) { push(out, rec) }
+    return out
+}
+
+func find_rec(state, kind, key) {
+    let i = 0
+    while (i < len(state)) {
+        let f = split(state[i], "|")
+        if (f[0] == kind) {
+            if (f[1] == key) { return state[i] }
+        }
+        i = i + 1
+    }
+    return ""
+}
+
+func inspect(state, name) {
+    let srv = find_rec(state, "SERVER", name)
+    if (srv == "") {
+        print("INSPECT " + name + " UNKNOWN")
+        return
+    }
+    let f = split(srv, "|")
+    print("INSPECT " + name + " ip=" + f[2] + " role=" + f[3])
+    let i = 0
+    while (i < len(state)) {
+        let s = split(state[i], "|")
+        if (s[0] == "SERVICE") {
+            if (s[1] == name) {
+                print("INSPECT SERVICE " + s[2] + " status=" + s[3])
+            }
+        }
+        i = i + 1
+    }
+}
+
+func list_all(state) {
+    let n = 0
+    let i = 0
+    while (i < len(state)) {
+        if (state[i] != "") {
+            print("LIST " + state[i])
+            n = n + 1
+        }
+        i = i + 1
+    }
+    print("LIST total=" + str(n))
+}
+
+func count_type(state, kind) {
+    let n = 0
+    let i = 0
+    while (i < len(state)) {
+        let f = split(state[i], "|")
+        if (f[0] == kind) { n = n + 1 }
+        i = i + 1
+    }
+    return n
+}
+
+func persist(path, lines) {
+    let out = ""
+    let i = 0
+    while (i < len(lines)) {
+        out = out + lines[i] + "\n"
+        i = i + 1
+    }
+    writeFile(path, out)
+}
+
+func main() {
+    let cmds = split(readFile("data/commands.dat"), "\n")
+    let state = split(readFile("data/state.dat"), "\n")
+    let report = ""
+    let i = 0
+    while (i < len(cmds)) {
+        let line = trim(cmds[i])
+        if (line != "") {
+            let f = split(line, "|")
+            let op = f[0]
+            if (op == "SERVER") {
+                let rec = "SERVER|" + f[1] + "|" + f[2] + "|" + f[3]
+                state = put_record(state, rec)
+                report = report + "SERVER " + f[1] + " " + f[2] + " " + f[3] + "\n"
+            }
+            if (op == "SERVICE") {
+                let rec = "SERVICE|" + f[1] + "|" + f[2] + "|" + f[3]
+                state = put_record(state, rec)
+                report = report + "SERVICE " + f[1] + " " + f[2] + " " + f[3] + "\n"
+            }
+            if (op == "INSPECT") {
+                inspect(state, f[1])
+                report = report + "INSPECT " + f[1] + "\n"
+            }
+            if (op == "LIST") {
+                list_all(state)
+                report = report + "LIST\n"
+            }
+        }
+        i = i + 1
+    }
+    persist("data/state.dat", state)
+    persist("data/report.dat", split(report, "\n"))
+    print("SERVER_MANAGER_OK servers=" + str(count_type(state, "SERVER")) + " services=" + str(count_type(state, "SERVICE")))
+}

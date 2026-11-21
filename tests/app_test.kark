@@ -1,0 +1,55 @@
+func test_server_record_parse() {
+    let rec = "SERVER|web-01|10.1.0.1|web"
+    let f = split(rec, "|")
+    assert_eq(f[0], "SERVER")
+    assert_eq(f[1], "web-01")
+    assert_eq(f[2], "10.1.0.1")
+    assert_eq(f[3], "web")
+}
+
+func test_service_upsert_by_key() {
+    let state = ["SERVICE|web-01|nginx|running"]
+    let newrec = "SERVICE|web-01|nginx|stopped"
+    let out = []
+    let replaced = 0
+    let i = 0
+    while (i < len(state)) {
+        let f = split(state[i], "|")
+        if (f[0] == "SERVICE") {
+            if (f[1] == "web-01") {
+                if (f[2] == "nginx") {
+                    push(out, newrec)
+                    replaced = 1
+                } else {
+                    push(out, state[i])
+                }
+            } else {
+                push(out, state[i])
+            }
+        } else {
+            push(out, state[i])
+        }
+        i = i + 1
+    }
+    if (replaced == 0) { push(out, newrec) }
+    let g = split(out[0], "|")
+    assert_eq(replaced, 1)
+    assert_eq(len(out), 1)
+    assert_eq(g[3], "stopped")
+}
+
+func test_inspect_services() {
+    let state = ["SERVER|web-01|10.1.0.1|web", "SERVICE|web-01|nginx|running", "SERVICE|web-01|sshd|running", "SERVICE|db-01|postgres|running"]
+    let names = []
+    let i = 0
+    while (i < len(state)) {
+        let f = split(state[i], "|")
+        if (f[0] == "SERVICE") {
+            if (f[1] == "web-01") { push(names, f[2]) }
+        }
+        i = i + 1
+    }
+    assert_eq(len(names), 2)
+    assert_eq(names[0], "nginx")
+    assert_eq(names[1], "sshd")
+}
